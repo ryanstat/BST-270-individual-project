@@ -6,7 +6,7 @@ output: html_notebook
 
 This file documents an attempt to reproduce the first two tables in the article [__A Better Way To Evaluate NBA Defense__](https://fivethirtyeight.com/features/a-better-way-to-evaluate-nba-defense/).
 
-Firstly, load the packages and data. The packages used in this document are `dplyr v1.0.5` and `DT v0.31`.  The codes in the document is developed in `R 4.0.2`. The [dataset](https://raw.githubusercontent.com/fivethirtyeight/data/master/nba-draymond/draymond.csv) contains the DRAYMOND ratings (Defensive Rating Accounting for Yielding Minimal Openness by Nearest Defender) for every player since the 2013-14 season.
+Firstly, load the packages and data. The packages used in this document are `dplyr v1.0.5` and `DT v0.31`.  The codes in the document are developed in `R 4.0.2`. The [dataset](https://raw.githubusercontent.com/fivethirtyeight/data/master/nba-draymond/draymond.csv) contains the DRAYMOND ratings (Defensive Rating Accounting for Yielding Minimal Openness by Nearest Defender) for every player since the 2013-14 season.
 
 ```{r}
 library(dplyr)
@@ -22,13 +22,13 @@ For each player, the possessions is their sum of all possessions across years in
 
 ```{r}
 data %>% group_by(PLAYER = player) %>% 
-  mutate(weight = possessions/sum(possessions)) %>% 
-  mutate(weighted_DRAYMOND = DRAYMOND*weight) %>% 
-  summarise(`POSSESSIONS PLAYED` = round(sum(possessions)), `DRAYMOND RATING` = round(sum(weighted_DRAYMOND),2)) %>% 
-  filter(`POSSESSIONS PLAYED` >= 10000) %>% 
-  arrange(desc(`DRAYMOND RATING`)) %>% 
-  mutate_at(vars(`DRAYMOND RATING`), ~if_else(. > 0, paste0("+", .), paste0(.))) %>% 
-  DT::datatable()
+  mutate(weight = possessions/sum(possessions)) %>% # create weights using proportions of possessions
+  mutate(weighted_DRAYMOND = DRAYMOND*weight) %>% # calculate the weighted DRAYMOND point 
+  summarise(`POSSESSIONS PLAYED` = round(sum(possessions)), `DRAYMOND RATING` = round(sum(weighted_DRAYMOND),2)) %>% # round the displayed numbers
+  filter(`POSSESSIONS PLAYED` >= 10000) %>% # only display for players with greater than 10,000 possessions
+  arrange(desc(`DRAYMOND RATING`)) %>% # sort the rating in descending order
+  mutate_at(vars(`DRAYMOND RATING`), ~if_else(. > 0, paste0("+", .), paste0(.))) %>% # add the "+" sign for positive DRAYMOND ratings 
+  DT::datatable() # render interative table ouput
 ```
 
   *Defensive Rating Accounting for Yielding Minimal Openness by Nearest Defender
@@ -40,12 +40,12 @@ _NBA players by DRAYMOND* defensive ratings, based on opponents’ shooting data
 The results can be obtained by filtering the original dataset on the season and the minimum possessions as the. The table is sorted by the average DRAYMOND points in descending order.
 
 ```{r}
-data %>% filter(season == 2019, possessions >= 2000) %>%
-  select(PLAYER = player, `POSSESSIONS PLAYED` = possessions, `DRAYMOND RATING` = DRAYMOND) %>% 
-  arrange(desc(`DRAYMOND RATING`)) %>% 
-  mutate_at(vars(`DRAYMOND RATING`), ~round(., 2)) %>% mutate_at(vars(`POSSESSIONS PLAYED`), ~round(.)) %>% 
-  mutate_at(vars(`DRAYMOND RATING`), ~if_else(. > 0, paste0("+", .), paste0(.))) %>% 
-  DT::datatable()
+data %>% filter(season == 2019, possessions >= 2000) %>% # extract data for 2018-19 season and players with greater than 2,000 possessions in the season
+  select(PLAYER = player, `POSSESSIONS PLAYED` = possessions, `DRAYMOND RATING` = DRAYMOND) %>% # rename columns to match the output in the article
+  arrange(desc(`DRAYMOND RATING`)) %>% # sort the DRAYMOND rating in descending order
+  mutate_at(vars(`DRAYMOND RATING`), ~round(., 2)) %>% mutate_at(vars(`POSSESSIONS PLAYED`), ~round(.)) %>% # round the numbers
+  mutate_at(vars(`DRAYMOND RATING`), ~if_else(. > 0, paste0("+", .), paste0(.))) %>%  # add the "+" sign for positive DRAYMOND ratings 
+  DT::datatable() # render interative table ouput
 ```
 
  *Defensive Rating Accounting for Yielding Minimal Openness by Nearest Defender
